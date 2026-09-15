@@ -102,7 +102,7 @@ SA_SimilarityScoreDistribution = as.vector(SA[lower.tri(SA)])
 #| echo: false
 #| results: asis
 hist(SA_SimilarityScoreDistribution,main="",xlab="cosine similarity score")
-cat("<b>Figure 1:</b> Hi-Res Similarity Score Distribution (HRSSD) based on 45 unique pair-wise comparisons of the spectra in the set.")
+cat("<br><b>Figure 1:</b> Hi-Res Similarity Score Distribution (HRSSD) based on 45 unique pair-wise comparisons of the spectra in the set.")
 ```
 
 In @sisco2025capturing, the authors extracted the median similarity score as a proxy for reproducibility of the spectra in the set. If the median score is 1 (or very close to 1), then the spectra in the set would be considered reproducible. The further the median score was from 1, the less reproducible the set of mass spectra. 
@@ -124,7 +124,7 @@ hist(boot_results$t,main="",xlab="computed median")
 abline(v=SA_ci$bca[4],col="green",lty=2)
 abline(v=SA_ci$bca[5],col="green",lty=2)
 abline(v=median(boot_results$t),lty=3)
-cat("<br>Figure 2:</b> Sampling distribution of median (using bootstrapping). The black dotted line is the estimated median (based on computed medians using bootstrapping), and the green dotted lines are the estimated 95% confidence interval.")
+cat("<br><b>Figure 2:</b> Sampling distribution of median (using bootstrapping). The black dotted line is the estimated median (based on computed medians using bootstrapping), and the green dotted lines are the estimated 95% confidence interval.")
 ```
 
 
