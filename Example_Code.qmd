@@ -1,0 +1,142 @@
+---
+title: "Code example to support \"Exploring the similarity of helium and nitrogen direct analysis in real-time mass spectrometry spectra\" "
+author:
+  - name: Christany Liggins
+    id: cl
+    affiliations:
+      - ref: SHSU
+  - name: Arun S. Moorthy
+    id: asm
+    email: arunmoorthy@trentu.ca
+    affiliations:
+      - ref: trent
+  - name: J. Tyler Davidson
+    id: jtd
+    email: jtdavidson@shsu.edu
+    affiliations:
+      - ref: SHSU
+affiliations:
+  - id: SHSU
+    name: Department of Forensic Science, Sam Houston State University
+    city: Huntsville
+    state: TX
+    postal: 77340
+    country: United States
+  - id: trent
+    name: Department of Forensic Science, Trent University
+    city: Peterborough
+    state: ON
+    postal: K9L 0G2
+    country: Canada
+format: 
+  html:
+    embed-resources: true
+bibliography: references.bib
+---
+
+### Introduction
+
+In this document, we describe how we compute the **Spectral Similarity Score Distribution** from a set of mass spectra, and then demonstrate how we can use statistics pulled from this distribution as a proxy for *reproducibility* and compare multiple sets of mass spectra to observe trends between the sets. 
+
+A preliminary version of this procedure was employed in @sisco2025capturing. The main difference between what is described here and what was used in the reference is that here we use (1) high-resolution mass spectra instead of integer-resolution, which means we have to use a modified measure of numerical similarity between spectra, and (2) bootstrapping to compute a confidence interval based on the similarity score distribution rather than just reporting the median directly from the distribution.
+
+### Method
+
+First we clear our work space and load up several libraries with functions of interest. We also load two custom functions--one for computing the similarity score between high-resolution mass spectra and the second for finding the median with a set of indices (as is required for bootstrapping, which is explained later). 
+
+```{r setup}
+rm(list=ls())
+library(boot) # used for bootstrapping and computing confidence intervals
+source("Functions/HR-SimilarityScores.r")
+source("Functions/get_median.R")
+```
+
+Here we load an example set of spectra for which we'd like to compute the similarity score distribution. 
+```{r load spectra}
+sample_dir = "He Sample/MID/"
+sample_files = list.files(sample_dir)
+```
+Let $n$ be the number of spectra in the set. In this case, there are 10 files. Next, we compute the spectral similarity score for all unique pairs of spectra in the set. The number of comparisons will be equal to $(n^2-n)/2$. In this example, that means there will be 45 spectral similarity scores computed. 
+
+To compute the numerical similarity of a pair of high-resolution mass spectra, we need to process each mass spectrum by specifying a noise threshold and an m/z precision--the resulting *trimmed-and-binned* mass spectra can then be aligned by mass to charge ratios and encoded as vectors which can be treated like integer-resolution mass spectra. A full description of computing the similarity between high-resolution mass spectra is shared in @moorthy2026calculating. 
+
+In the next chunk of code, we actually compute a similarity matrix between all combinations of the 30 spectra, but note that only the lower triangle (435) scores make up the similarity score distribution.
+
+```{r compute similarity score distribution}
+mz_column = 2
+int_column = 3
+noise_threshold = 0.05
+mz_precision = 2
+
+SA = array(0,dim=c(length(sample_files),length(sample_files))) # setting up an empty array to store scores
+  for(i in 1:length(sample_files)){
+    data = read.csv(paste0(sample_dir,"/",sample_files[i]),header=FALSE, skip= 2)
+    mz = data[,mz_column]
+    int = data[,int_column]/max(data[,int_column])
+    pSpec = spec_processing(mz,int,noise_threshold,mz_precision)  
+    z1 = pSpec$mz
+    r1 = pSpec$intensity
+    for(j in 1:length(sample_files)){
+      if(i > j) next
+      if(i == j){
+        SA[i,j] = 1
+        next
+      } 
+      data = read.csv(paste0(sample_dir,"/",sample_files[j]),header=FALSE, skip= 2)
+      mz = data[,mz_column]
+      int = data[,int_column]/max(data[,int_column])
+      pSpec = spec_processing(mz,int,noise_threshold,mz_precision)  
+      z2 = pSpec$mz
+      r2 = pSpec$intensity
+      
+      SA[i,j] = SA[j,i]= computeSim(z1,r1,z2,r2,mz_precision)
+      
+    }
+  }
+
+SA_SimilarityScoreDistribution = as.vector(SA[lower.tri(SA)])
+```
+
+
+```{r generate histogram}
+#| echo: false
+#| results: asis
+hist(SA_SimilarityScoreDistribution,main="(high res) Similarity Score Distribution based on 45 observations",xlab="cosine similarity score")
+cat("<b>Figure 1:</b> The black dotted line is the estimated median (based on computed medians using bootstrapping), and the green dotted lines are the estimated 95% confidence interval.")
+```
+
+In @sisco2025capturing, the authors extracted the median similarity score as a proxy for reproducibility of the spectra in the set. If the median score is 1 (or very close to 1), then the spectra in the set would be considered reproducible. The further the median score was from 1, the less reproducible the set of mass spectra. 
+
+In this study, we conduct 2000 repeats of re-sampling (with replacement) and compute the median from the similarity score distribution to generate a sampling distribution. We then use the resulting sampling distribution to generate a 95% confidence interval for the median spectral similarity score (which, again, can be thought of as a proxy of reproducibility).
+
+The process of **re-sampling with replacement to generate a sampling distribution** is known as **bootstrapping**. The goal with bootstrapping is to estimate a parameter (a property of the entire population) based on a statistic (a property of a sample) by repeatedly generating example samples from the available observations. It is imperative that we allow replacement (sampling the same observation twice), otherwise each iteration of the process will result in the exact same sample composition. 
+
+```{r bootstrapping and estimating confidence interval}
+boot_results <- boot(data = SA_SimilarityScoreDistribution, statistic = get_median, R = 2000)
+SA_ci = boot.ci(boot_results, type = "bca")
+```
+
+```{r ploting histogram of bootstrapping results}
+#| results: asis
+#| echo: false
+
+hist(boot_results$t,main="Sampling distribution of median (using bootstrapping)",xlab="computed median")
+abline(v=SA_ci$bca[4],col="green",lty=2)
+abline(v=SA_ci$bca[5],col="green",lty=2)
+abline(v=median(boot_results$t),lty=3)
+cat("<br>Figure 2:</b> The black dotted line is the estimated median (based on computed medians using bootstrapping), and the green dotted lines are the estimated 95% confidence interval.")
+```
+
+
+In theory, someone can compute any number of statistics from the similarity score distribution. And given a the similarity score distribution for different samples, we can compare the statistics from the similarity score distribution to make inferences/comments on the sets of mass spectra. 
+
+For example, in the Min-Max Test by @moorthy2021min, the authors compare the **minimum values** from the similarity score distribution generated through comparisons of spectra from the same sample (the set of intra-sample similarity scores) to the **maximum value* from the similarity score distribution generated through comparisons of spectra from different samples (the set of inter-sample similarity scores). 
+
+Given that we are interested in high-resolution mass spectra collected with DART-MS--where outlier values are to be expected--looking at extreme values like in the min-max test is not recommended. Instead, we look at the confidence interval of the median generated through bootstrapping as a way to compare different sets of spectra. Further, we look at medians as computed when the set of spectra represents two different samples (e.g., inter-gas comparisons). If a set of spectra has a median similarity score close to one, than we can say that the spectra in the set are reproducible (ergo not very different). The lower the median similarity score, the less reproducible the spectra in the set (ergo the spectra are fairly different).  
+
+
+
+### References
+
+::: {#refs}
+:::
