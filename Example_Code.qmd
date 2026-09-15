@@ -60,7 +60,7 @@ Let $n$ be the number of spectra in the set. In this case, there are 10 files. N
 
 To compute the numerical similarity of a pair of high-resolution mass spectra, we need to process each mass spectrum by specifying a noise threshold and an m/z precision--the resulting *trimmed-and-binned* mass spectra can then be aligned by mass to charge ratios and encoded as vectors which can be treated like integer-resolution mass spectra. A full description of computing the similarity between high-resolution mass spectra is shared in @moorthy2026calculating. 
 
-In the next chunk of code, we actually compute a similarity matrix between all combinations of the 30 spectra, but note that only the lower triangle (435) scores make up the similarity score distribution.
+In the next chunk of code, we actually compute a similarity matrix between all combinations of the 10 spectra, but note that only the lower triangle (45) scores make up the similarity score distribution.
 
 ```{r compute similarity score distribution}
 mz_column = 2
@@ -101,8 +101,8 @@ SA_SimilarityScoreDistribution = as.vector(SA[lower.tri(SA)])
 ```{r generate histogram}
 #| echo: false
 #| results: asis
-hist(SA_SimilarityScoreDistribution,main="(high res) Similarity Score Distribution based on 45 observations",xlab="cosine similarity score")
-cat("<b>Figure 1:</b> The black dotted line is the estimated median (based on computed medians using bootstrapping), and the green dotted lines are the estimated 95% confidence interval.")
+hist(SA_SimilarityScoreDistribution,main="",xlab="cosine similarity score")
+cat("<b>Figure 1:</b> Hi-Res Similarity Score Distribution (HRSSD) based on 45 unique pair-wise comparisons of the spectra in the set.")
 ```
 
 In @sisco2025capturing, the authors extracted the median similarity score as a proxy for reproducibility of the spectra in the set. If the median score is 1 (or very close to 1), then the spectra in the set would be considered reproducible. The further the median score was from 1, the less reproducible the set of mass spectra. 
@@ -120,11 +120,11 @@ SA_ci = boot.ci(boot_results, type = "bca")
 #| results: asis
 #| echo: false
 
-hist(boot_results$t,main="Sampling distribution of median (using bootstrapping)",xlab="computed median")
+hist(boot_results$t,main="",xlab="computed median")
 abline(v=SA_ci$bca[4],col="green",lty=2)
 abline(v=SA_ci$bca[5],col="green",lty=2)
 abline(v=median(boot_results$t),lty=3)
-cat("<br>Figure 2:</b> The black dotted line is the estimated median (based on computed medians using bootstrapping), and the green dotted lines are the estimated 95% confidence interval.")
+cat("<br>Figure 2:</b> Sampling distribution of median (using bootstrapping). The black dotted line is the estimated median (based on computed medians using bootstrapping), and the green dotted lines are the estimated 95% confidence interval.")
 ```
 
 
