@@ -1,0 +1,7 @@
+---
+title: "HRSSD Example Code"
+---
+
+This repository contains example calculations supporting: *Exploring the similarity of helium and nitrogen direct analysis in real-time mass spectrometry spectra* by Liggins, Moorthy, and Davidson.
+
+[View the example code](Example_Code.html)
