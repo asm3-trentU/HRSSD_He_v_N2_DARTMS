@@ -32,6 +32,7 @@ format:
   html:
     embed-resources: true
 bibliography: references.bib
+csl: apa.csl  
 ---
 
 ### Introduction
@@ -130,7 +131,7 @@ cat("<br><b>Figure 2:</b> Sampling distribution of median (using bootstrapping).
 
 In theory, someone can compute any number of statistics from the similarity score distribution. And given a the similarity score distribution for different samples, we can compare the statistics from the similarity score distribution to make inferences/comments on the sets of mass spectra. 
 
-For example, in the Min-Max Test by @moorthy2021min, the authors compare the **minimum values** from the similarity score distribution generated through comparisons of spectra from the same sample (the set of intra-sample similarity scores) to the **maximum value* from the similarity score distribution generated through comparisons of spectra from different samples (the set of inter-sample similarity scores). 
+For example, in the Min-Max Test by @moorthy2021min, the authors compare the **minimum values** from the similarity score distribution generated through comparisons of spectra from the same sample (the set of intra-sample similarity scores) to the **maximum value** from the similarity score distribution generated through comparisons of spectra from different samples (the set of inter-sample similarity scores). 
 
 Given that we are interested in high-resolution mass spectra collected with DART-MS--where outlier values are to be expected--looking at extreme values like in the min-max test is not recommended. Instead, we look at the confidence interval of the median generated through bootstrapping as a way to compare different sets of spectra. Further, we look at medians as computed when the set of spectra represents two different samples (e.g., inter-gas comparisons). If a set of spectra has a median similarity score close to one, than we can say that the spectra in the set are reproducible (ergo not very different). The lower the median similarity score, the less reproducible the spectra in the set (ergo the spectra are fairly different).  
 
